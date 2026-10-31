@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Format, lint, types, tests, build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: sattrack
+          POSTGRES_PASSWORD: ci-password-not-secret
+          POSTGRES_DB: sattrack_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sattrack -d sattrack_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      SATTRACK_TEST_DATABASE_URL: postgresql+psycopg://sattrack:ci-password-not-secret@localhost:5432/sattrack_test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.11.32"
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies from lockfiles
+        run: make install
+      - name: Run all checks
+        run: make check
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency-audit:
+    name: Dependency audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.11.32"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - name: Audit Python dependencies
+        working-directory: backend
+        run: |
+          uv export --locked --no-hashes --no-emit-project --format requirements-txt > "$RUNNER_TEMP/requirements.txt"
+          uvx pip-audit==2.10.1 --strict --requirement "$RUNNER_TEMP/requirements.txt"
+      - name: Audit npm dependencies (high and critical block)
+        working-directory: frontend
+        run: npm audit --audit-level=high
+
+  container-images:
+    name: Build container images
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build backend image
+        run: docker build --tag satellite-tracker-backend:${{ github.sha }} backend
+      - name: Build frontend image
+        run: docker build --tag satellite-tracker-web:${{ github.sha }} frontend
