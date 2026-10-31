@@ -36,6 +36,8 @@ services:
     build: ./backend
     command: ["alembic", "upgrade", "head"]
     environment: *backend-env
+    healthcheck:
+      disable: true  # the image's check probes the API port, which this container does not serve
     depends_on:
       db:
         condition: service_healthy
@@ -53,6 +55,8 @@ services:
     build: ./backend
     command: ["python", "-m", "sattrack.ingest"]
     environment: *backend-env
+    healthcheck:
+      disable: true  # the image's check probes the API port, which this container does not serve
     depends_on:
       migrate:
         condition: service_completed_successfully
