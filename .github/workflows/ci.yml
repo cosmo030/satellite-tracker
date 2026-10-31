@@ -89,5 +89,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build backend image
         run: docker build --tag satellite-tracker-backend:${{ github.sha }} backend
+      - name: Smoke-test backend image (imports and migrations are packaged)
+        run: >-
+          docker run --rm satellite-tracker-backend:${{ github.sha }}
+          sh -c "python -c 'import sattrack.main, sattrack.ingest.__main__' && alembic history"
       - name: Build frontend image
         run: docker build --tag satellite-tracker-web:${{ github.sha }} frontend
+      - name: Validate Caddy configuration
+        run: >-
+          docker run --rm satellite-tracker-web:${{ github.sha }}
+          caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
