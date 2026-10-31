@@ -1,0 +1,41 @@
+# Local-only agent instructions and engineering standards (kept out of the public repo)
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+.github/copilot-instructions.md
+docs/engineering-standards/
+engineering-standards.zip
+
+# Environment files (only .env.example is committed)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.egg-info/
+
+# Node / frontend
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Local data and logs
+*.log
+.local/
+pgdata/
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
