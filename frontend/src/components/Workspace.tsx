@@ -21,6 +21,7 @@ import {
   type WorkspaceLayout,
 } from '../ui/layout';
 import { writeStorage } from '../ui/storage';
+import { CountMotion } from './RollingNumber';
 import { Splitter } from './Splitter';
 
 /** Saves are debounced: a drag or a burst of key presses writes once. */
@@ -111,6 +112,8 @@ export function Workspace({
     saveLayout();
     onLayoutChange();
   };
+  // Counts in a collapsed tile change out of sight, so they are set without rolling.
+  const expanded = (tile: TileId) => sizes.values[tile] > TILE_LIMITS[tile].collapsedPx + 0.5;
   const splitter = (
     tile: TileId,
     label: string,
@@ -155,10 +158,12 @@ export function Workspace({
           onLayoutChange={onLayoutChange}
           onLayoutChanged={onLayoutChanged}
         >
-          <Panel {...tilePanel('groups')}>{tiles.groups}</Panel>
+          <Panel {...tilePanel('groups')}>
+            <CountMotion value={expanded('left') && expanded('groups')}>{tiles.groups}</CountMotion>
+          </Panel>
           {splitter('groups', 'Resize groups panel', 'horizontal', 1)}
           <Panel id="search" minSize={SEARCH_MIN_PX}>
-            {tiles.search}
+            <CountMotion value={expanded('left')}>{tiles.search}</CountMotion>
           </Panel>
         </Group>
       </Panel>

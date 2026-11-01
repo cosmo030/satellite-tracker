@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type Ref } from 'react';
 
 import type { GlobeLayers } from '../globe/GlobeScene';
-import { formatCount } from '../orbit/format';
 import { LayersIcon, SunIcon } from './icons';
+import { RollingNumber } from './RollingNumber';
 
 interface ViewportTileProps {
   /** The globe follows this element's position and size. */
@@ -32,7 +32,9 @@ export function ViewportTile({
         Globe
       </h2>
       <div className="viewport-overlay">
-        <span className="chip overlay-chip">{groupLabel(groupName, satelliteCount)}</span>
+        <span className="chip overlay-chip">
+          <GroupLabel groupName={groupName} count={satelliteCount} />
+        </span>
         <div className="viewport-tools">
           <button
             type="button"
@@ -69,9 +71,15 @@ export function ViewportTile({
   );
 }
 
-function groupLabel(groupName: string | null, count: number | null): string {
-  if (!groupName) return 'No group selected';
-  return count === null ? `${groupName}, loading…` : `${groupName}, ${formatCount(count)}`;
+function GroupLabel({ groupName, count }: { groupName: string | null; count: number | null }) {
+  if (!groupName) return <>No group selected</>;
+  if (count === null) return <>{groupName}, loading…</>;
+  // Keyed by group: switching groups shows the new count at once instead of rolling to it.
+  return (
+    <>
+      {groupName}, <RollingNumber key={groupName} value={count} />
+    </>
+  );
 }
 
 interface LayersMenuProps {

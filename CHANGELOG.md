@@ -15,9 +15,14 @@ All notable changes to this project are documented here. The format follows
   medium and phone-sized screens. See ADR 0005.
 - The globe now shows day/night lighting; only the selected satellite uses the accent colour.
 - Selected satellites show the country name instead of the SATCAT owner code.
+- Counts use the browser's locale for thousands separators (for example "11.156" in German).
 
 ### Added
 
+- Rolling digits: when a count changes (group sizes, the number of groups, search matches, the
+  object count on the globe), the changed digits roll like an odometer, ones first, up for
+  increases and down for decreases. Live telemetry and the clock do not roll; reduced-motion
+  settings, hidden tabs and collapsed tiles switch instantly.
 - `Ctrl K` / `⌘K` focuses search from anywhere.
 - Toggles for the orbit path, ground track and day/night lighting on the globe.
 - Timeline tile with the UTC clock and the current UTC day (time controls follow in phase 2).

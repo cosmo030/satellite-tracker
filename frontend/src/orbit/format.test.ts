@@ -74,7 +74,12 @@ describe('number formatting', () => {
     expect(formatDegrees(97.5)).toBe('97.50°');
     expect(formatPeriod(92.897)).toBe('92.9 min');
     expect(formatPeriod(1436.4)).toBe('23.94 h');
-    expect(formatCount(11156)).toBe('11,156');
+  });
+
+  it('formats counts with locale separators and Latin digits', () => {
+    expect(formatCount(11156, 'en-US')).toBe('11,156');
+    expect(formatCount(11156, 'de-DE')).toBe('11.156');
+    expect(formatCount(11156, 'ar-EG')).toMatch(/^11.156$/u);
   });
 });
 

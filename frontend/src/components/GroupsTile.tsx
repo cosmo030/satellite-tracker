@@ -2,7 +2,7 @@ import type { Ref } from 'react';
 
 import type { Group } from '../api/client';
 import type { GroupSatellites } from '../hooks/useGroupSatellites';
-import { formatCount } from '../orbit/format';
+import { RollingNumber } from './RollingNumber';
 import { Tile } from './Tile';
 
 interface GroupsTileProps {
@@ -25,7 +25,11 @@ export function GroupsTile({
   activeRowRef,
 }: GroupsTileProps) {
   return (
-    <Tile id="groups" title="Groups" meta={groups ? groups.length : undefined}>
+    <Tile
+      id="groups"
+      title="Groups"
+      meta={groups ? <RollingNumber value={groups.length} /> : undefined}
+    >
       {groupsFailed && <p className="status error">Could not reach the API.</p>}
       {!groupsFailed && groups === null && <p className="status">Loading groups…</p>}
       {groups?.length === 0 && (
@@ -47,7 +51,7 @@ export function GroupsTile({
                   }}
                 >
                   <span className="name">{g.name}</span>
-                  <span className="value">{formatCount(g.satellite_count)}</span>
+                  <RollingNumber className="value" value={g.satellite_count} />
                 </button>
               </li>
             );
