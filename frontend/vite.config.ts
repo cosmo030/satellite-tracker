@@ -14,12 +14,20 @@ export default defineConfig({
   plugins: [
     react(),
     viteStaticCopy({
-      targets: ['Workers', 'ThirdParty', 'Assets', 'Widgets'].map((dir) => ({
-        src: `${cesiumSource}/${dir}`,
-        dest: CESIUM_BASE_URL.slice(1),
-        // Drop "node_modules/cesium/Build/Cesium" so files land in /cesium/<dir>/...
-        rename: { stripBase: cesiumSource.split('/').length },
-      })),
+      targets: [
+        ...['Workers', 'ThirdParty', 'Assets', 'Widgets'].map((dir) => ({
+          src: `${cesiumSource}/${dir}`,
+          dest: CESIUM_BASE_URL.slice(1),
+          // Drop "node_modules/cesium/Build/Cesium" so files land in /cesium/<dir>/...
+          rename: { stripBase: cesiumSource.split('/').length },
+        })),
+        // The self-hosted fonts are under the SIL Open Font License, which travels with them.
+        ...['tektur', 'instrument-sans'].map((font) => ({
+          src: `node_modules/@fontsource-variable/${font}/LICENSE`,
+          dest: 'licenses',
+          rename: { stripBase: true as const, name: `${font}-OFL.txt` },
+        })),
+      ],
     }),
   ],
   define: {
