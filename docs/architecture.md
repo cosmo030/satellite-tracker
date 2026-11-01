@@ -17,7 +17,7 @@ flowchart LR
         API[REST API<br/>FastAPI]
     end
     subgraph Browser
-        UI[React UI<br/>search, details]
+        UI[React UI<br/>tiled workspace]
         WW[Web Worker<br/>satellite.js SGP4]
         GL[CesiumJS globe]
     end
@@ -34,7 +34,7 @@ flowchart LR
 | Ingest worker | `backend/src/sattrack/ingest/` | The only code that calls CelesTrak. Fetches each configured group at most once per 2-hour update, SATCAT metadata once a day, logs every request in `fetch_log`, and stops on any non-200 response with exponential back-off (2 h to 24 h). |
 | Catalog | `backend/src/sattrack/catalog/` | Domain types and rules (orbit classification), data access for satellites, element sets and groups, and the catalog HTTP routes. |
 | Health | `backend/src/sattrack/health/` | `/api/v1/health`: database reachability and data freshness. |
-| Web frontend | `frontend/src/` | React UI. `orbit/` holds SGP4 propagation (pure functions) and the worker; `globe/` wraps CesiumJS; `hooks/` loads data from the API. |
+| Web frontend | `frontend/src/` | React UI. `components/` holds the tiles and the resizable workspace (react-resizable-panels); `ui/` holds pure layout, skin, placement and catalog helpers; `orbit/` holds SGP4 propagation (pure functions) and the worker; `globe/` wraps CesiumJS and places its canvas under the viewport tile; `hooks/` loads data from the API and tracks skin and screen size. |
 
 Backend modules depend on each other only through their package `__init__` exports.
 `ingest` writes catalog data through `CatalogRepository`; `health` reads freshness through
@@ -58,6 +58,8 @@ and exchanged in UTC (ISO 8601).
 - One service owns all CelesTrak traffic ([ADR 0003](adr/0003-single-ingest-service-for-celestrak.md)).
 - CesiumWidget with offline imagery, so no Cesium ion token and a strict CSP ([ADR 0004](adr/0004-cesiumwidget-with-offline-imagery.md)).
 - Stack and repository layout ([ADR 0001](adr/0001-initial-stack-and-structure.md)).
+- A tiled, resizable workspace with Instrument and Frosted glass skins ([ADR 0005](adr/0005-tiled-workspace-and-skins.md)).
+  Layout and skin preferences are stored in the browser (`localStorage`), never on the server.
 
 ## Deployment
 

@@ -1,13 +1,15 @@
 /**
- * Imperative wrapper around the CesiumJS viewer: satellite points, selection and orbit lines.
- * React components talk to this class only; Cesium types do not leak into the UI code.
+ * Imperative wrapper around the CesiumJS viewer: satellite points, selection, orbit lines and
+ * lighting. React components talk to this class only; Cesium types do not leak into the UI code.
  */
 import {
   buildModuleUrl,
   Cartesian3,
   Color,
   ImageryLayer,
+  JulianDate,
   Material,
+  PerspectiveFrustum,
   PointPrimitiveCollection,
   type PointPrimitive,
   type Polyline,
@@ -22,18 +24,31 @@ import 'cesium/Build/Cesium/Widgets/widgets.css';
 
 import { POSITION_STRIDE, type GeoPosition } from '../orbit/propagation';
 
+/** Which extras are drawn for the selected satellite. */
+export interface GlobeLayers {
+  orbitPath: boolean;
+  groundTrack: boolean;
+}
+
 const KM_TO_M = 1000;
-const POINT_COLOR = Color.fromCssColorString('#e8f1ff');
-const SELECTED_COLOR = Color.fromCssColorString('#ffd166');
-const ORBIT_COLOR = Color.fromCssColorString('#4cc9f0');
-const GROUND_TRACK_COLOR = Color.fromCssColorString('#ffd166').withAlpha(0.6);
+// Only the selected satellite uses the accent colour; every other satellite is a neutral grey.
+const POINT_COLOR = Color.fromCssColorString('#b4bcc8').withAlpha(0.85);
+const MARKER_OUTLINE = Color.fromCssColorString('#07080a');
+const FALLBACK_ACCENT = '#ff7847';
+const GROUND_TRACK_ALPHA = 0.4;
+const ORBIT_DASH_LENGTH_PX = 14;
 // When a satellite is selected the camera moves above it, this far beyond its altitude.
 const CAMERA_STANDOFF_KM = 8000;
+const FLIGHT_SECONDS = 1.5;
 // Straight segments between track points would dip below the surface; lift the line a bit.
 const GROUND_TRACK_HEIGHT_KM = 10;
 
 function toCartesian(p: GeoPosition, heightKm = p.heightKm): Cartesian3 {
   return Cartesian3.fromDegrees(p.longitudeDeg, p.latitudeDeg, heightKm * KM_TO_M);
+}
+
+function flightSeconds(): number {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : FLIGHT_SECONDS;
 }
 
 export class GlobeScene {
@@ -45,8 +60,16 @@ export class GlobeScene {
   private readonly orbitLine: Polyline;
   private readonly groundTrackLine: Polyline;
   private focusedNoradId: number | null = null;
+  private accent = Color.fromCssColorString(FALLBACK_ACCENT);
+  private layers: GlobeLayers = { orbitPath: true, groundTrack: true };
+  private hasTrack = false;
+  private homeViewPending = true;
 
-  constructor(container: HTMLElement, onPick: (noradId: number | null) => void) {
+  constructor(
+    container: HTMLElement,
+    creditContainer: HTMLElement,
+    onPick: (noradId: number | null) => void,
+  ) {
     // CesiumWidget rather than Viewer: Viewer's toolbar widgets use Knockout, which needs
     // 'unsafe-eval' in the Content-Security-Policy.
     this.viewer = new CesiumWidget(container, {
@@ -54,24 +77,27 @@ export class GlobeScene {
       baseLayer: ImageryLayer.fromProviderAsync(
         TileMapServiceImageryProvider.fromUrl(buildModuleUrl('Assets/Textures/NaturalEarthII')),
       ),
+      // Credits are shown in a corner of the viewport tile, wherever the canvas extends to.
+      creditContainer,
     });
+    this.viewer.scene.globe.enableLighting = true;
+    // The app drives the clock (see setTime) so the sun matches the time the UI shows.
+    this.viewer.clock.shouldAnimate = false;
+
     const primitives = this.viewer.scene.primitives;
     this.points = primitives.add(new PointPrimitiveCollection());
     const lines: PolylineCollection = primitives.add(new PolylineCollection());
-    this.orbitLine = lines.add({ width: 2, show: false, material: colorMaterial(ORBIT_COLOR) });
-    this.groundTrackLine = lines.add({
-      width: 2,
-      show: false,
-      material: colorMaterial(GROUND_TRACK_COLOR),
-    });
+    this.orbitLine = lines.add({ width: 1.5, show: false });
+    this.groundTrackLine = lines.add({ width: 1.5, show: false });
     const highlight: PointPrimitiveCollection = primitives.add(new PointPrimitiveCollection());
     this.selectedMarker = highlight.add({
-      pixelSize: 12,
-      color: SELECTED_COLOR,
-      outlineColor: Color.BLACK,
-      outlineWidth: 1,
+      pixelSize: 10,
+      outlineColor: MARKER_OUTLINE,
+      outlineWidth: 1.5,
       show: false,
     });
+    this.applyAccent();
+
     this.clickHandler = new ScreenSpaceEventHandler(this.viewer.scene.canvas);
     this.clickHandler.setInputAction((click: ScreenSpaceEventHandler.PositionedEvent) => {
       const picked: unknown = this.viewer.scene.pick(click.position);
@@ -83,7 +109,7 @@ export class GlobeScene {
   setSatellites(noradIds: readonly number[]): void {
     this.points.removeAll();
     this.pointList = noradIds.map((id) =>
-      this.points.add({ id, pixelSize: 5, color: POINT_COLOR, show: false }),
+      this.points.add({ id, pixelSize: 4, color: POINT_COLOR, show: false }),
     );
   }
 
@@ -116,29 +142,76 @@ export class GlobeScene {
       this.focusedNoradId = noradId;
       this.viewer.camera.flyTo({
         destination: toCartesian(position, position.heightKm + CAMERA_STANDOFF_KM),
-        duration: 1.5,
+        duration: flightSeconds(),
       });
     }
   }
 
   /** Draw the orbit path and its ground track; an empty track hides both. */
   setSelectedTrack(track: readonly GeoPosition[]): void {
-    const visible = track.length > 1;
-    this.orbitLine.show = visible;
-    this.groundTrackLine.show = visible;
-    if (!visible) return;
-    this.orbitLine.positions = track.map((p) => toCartesian(p));
-    this.groundTrackLine.positions = track.map((p) => toCartesian(p, GROUND_TRACK_HEIGHT_KM));
+    this.hasTrack = track.length > 1;
+    if (this.hasTrack) {
+      this.orbitLine.positions = track.map((p) => toCartesian(p));
+      this.groundTrackLine.positions = track.map((p) => toCartesian(p, GROUND_TRACK_HEIGHT_KM));
+    }
+    this.applyLineVisibility();
+  }
+
+  setLayers(layers: GlobeLayers): void {
+    this.layers = layers;
+    this.applyLineVisibility();
+  }
+
+  /** The selected satellite, its marker and its lines use the skin's accent (a CSS colour). */
+  setAccent(cssColor: string): void {
+    this.accent = Color.fromCssColorString(cssColor.trim() || FALLBACK_ACCENT);
+    this.applyAccent();
+  }
+
+  setLighting(enabled: boolean): void {
+    this.viewer.scene.globe.enableLighting = enabled;
+  }
+
+  /** The time the scene shows (sun position for day/night lighting). */
+  setTime(date: Date): void {
+    this.viewer.clock.currentTime = JulianDate.fromDate(date);
+  }
+
+  /** Field of view along the canvas's longer side (see ui/placement fieldOfViewFor). */
+  setFieldOfView(radians: number): void {
+    const frustum = this.viewer.camera.frustum;
+    if (frustum instanceof PerspectiveFrustum) frustum.fov = radians;
+    // The start view was fitted before the canvas had its real size and lens; fit it again once.
+    if (this.homeViewPending) {
+      this.homeViewPending = false;
+      this.viewer.camera.flyHome(0);
+    }
+  }
+
+  flyHome(): void {
+    this.viewer.camera.flyHome(flightSeconds());
   }
 
   destroy(): void {
     this.clickHandler.destroy();
     this.viewer.destroy();
   }
-}
 
-function colorMaterial(color: Color): Material {
-  return Material.fromType('Color', { color });
+  private applyAccent(): void {
+    this.selectedMarker.color = this.accent;
+    this.orbitLine.material = Material.fromType('PolylineDash', {
+      color: this.accent,
+      dashLength: ORBIT_DASH_LENGTH_PX,
+    });
+    this.groundTrackLine.material = Material.fromType('Color', {
+      color: this.accent.withAlpha(GROUND_TRACK_ALPHA),
+    });
+  }
+
+  private applyLineVisibility(): void {
+    this.orbitLine.show = this.hasTrack && this.layers.orbitPath;
+    this.groundTrackLine.show = this.hasTrack && this.layers.groundTrack;
+  }
 }
 
 function pickedNoradId(picked: unknown): number | null {
