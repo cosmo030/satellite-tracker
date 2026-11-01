@@ -25,7 +25,15 @@ from ..conftest import FakeCatalogSource, MutableClock
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 TEST_DATABASE_URL = os.environ.get("SATTRACK_TEST_DATABASE_URL")
-TABLES = ("satellite_groups", "orbital_elements", "satellites", "groups", "fetch_log")
+TABLES = (
+    "satellite_image",
+    "satellite_about",
+    "satellite_groups",
+    "orbital_elements",
+    "satellites",
+    "groups",
+    "fetch_log",
+)
 
 pytestmark = pytest.mark.integration
 

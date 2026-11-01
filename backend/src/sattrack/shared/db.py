@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import contextmanager
 
-from sqlalchemy import MetaData, create_engine
+from sqlalchemy import MetaData, create_engine, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
@@ -44,3 +44,24 @@ def transaction(session_factory: sessionmaker[Session]) -> Iterator[Session]:
     """Open a session for one business operation: commit on success, roll back on error."""
     with session_factory() as session, session.begin():
         yield session
+
+
+# PostgreSQL advisory lock held while a worker job (ingest or enrich) works, so the two never
+# overlap, also when one of them is started by hand in another process. Any constant works as
+# long as every job uses the same one.
+WORKER_LOCK_KEY = 0x5A77_4C0C
+
+
+@contextmanager
+def advisory_lock(session_factory: sessionmaker[Session], key: int) -> Iterator[None]:
+    """Hold a PostgreSQL advisory lock; waits until whoever holds it releases it.
+
+    The lock lives on its own autocommit connection, so no transaction stays open meanwhile.
+    """
+    with session_factory() as session:
+        connection = session.connection(execution_options={"isolation_level": "AUTOCOMMIT"})
+        connection.execute(text("SELECT pg_advisory_lock(:key)"), {"key": key})
+        try:
+            yield
+        finally:
+            connection.execute(text("SELECT pg_advisory_unlock(:key)"), {"key": key})

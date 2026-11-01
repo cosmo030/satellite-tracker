@@ -6,21 +6,30 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Path, Query, Response, status
 
-from sattrack.catalog.domain import OrbitClass, SatelliteFilters
+from sattrack.catalog.domain import ImageWidth, OrbitClass, SatelliteFilters
 from sattrack.catalog.repository import CatalogRepository
 from sattrack.catalog.schemas import (
+    AboutOut,
     ElementSetOut,
     GroupOut,
     SatelliteDetailOut,
     SatelliteOut,
     SatellitePageOut,
 )
-from sattrack.catalog.service import CatalogService, GroupNotFoundError, SatelliteNotFoundError
+from sattrack.catalog.service import (
+    AboutNotFoundError,
+    CatalogService,
+    GroupNotFoundError,
+    ImageNotFoundError,
+    SatelliteNotFoundError,
+)
 from sattrack.shared.web import SessionDep
 
 # Element sets change at most every 2 hours (CelesTrak's update cycle); clients revalidate
 # with the ETag after this many seconds.
 ELEMENTS_MAX_AGE_SECONDS = 300
+# Images are refreshed weekly at most.
+IMAGE_MAX_AGE_SECONDS = 604_800
 GROUP_SLUG_PATTERN = r"^[a-z0-9-]{1,50}$"
 
 router = APIRouter(prefix="/api/v1", tags=["catalog"])
@@ -92,7 +101,60 @@ def get_satellite(
     return SatelliteDetailOut(
         satellite=SatelliteOut.from_domain(detail.satellite),
         latest_elements=ElementSetOut.from_domain(elements) if elements else None,
+        has_about=detail.has_about,
+        has_image=detail.has_image,
     )
+
+
+@router.get(
+    "/satellites/{norad_id}/about",
+    response_model=AboutOut,
+    summary="Description, purpose and image credit from Wikimedia",
+    description=(
+        "Content from Wikidata (CC0), English Wikipedia (CC BY-SA 4.0) and Wikimedia Commons "
+        "(per-file licenses). Show the attribution fields with the content."
+    ),
+    responses={404: {"description": "No description for this object"}},
+)
+def get_about(
+    service: CatalogServiceDep,
+    norad_id: Annotated[int, Path(ge=1, le=999_999_999)],
+) -> AboutOut:
+    try:
+        info = service.get_about(norad_id)
+    except AboutNotFoundError as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return AboutOut.from_domain(info, image_path=f"{router.prefix}/satellites/{norad_id}/image")
+
+
+@router.get(
+    "/satellites/{norad_id}/image",
+    summary="The object's image (JPEG or PNG), 480 or 960 px wide",
+    description="Served from this API; supports ETag / If-None-Match.",
+    response_class=Response,
+    responses={
+        200: {"content": {"image/jpeg": {}, "image/png": {}}},
+        304: {"description": "Not modified"},
+        404: {"description": "No image for this object"},
+    },
+)
+def get_image(
+    service: CatalogServiceDep,
+    norad_id: Annotated[int, Path(ge=1, le=999_999_999)],
+    w: Annotated[ImageWidth, Query(description="Width in pixels: 480 or 960")],
+    if_none_match: Annotated[str | None, Header()] = None,
+) -> Response:
+    try:
+        image = service.get_image(norad_id, w)
+    except ImageNotFoundError as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    headers = {
+        "ETag": f'"{image.sha256}"',
+        "Cache-Control": f"public, max-age={IMAGE_MAX_AGE_SECONDS}",
+    }
+    if if_none_match == headers["ETag"]:
+        return Response(status_code=status.HTTP_304_NOT_MODIFIED, headers=headers)
+    return Response(content=image.data, media_type=image.mime, headers=headers)
 
 
 @router.get(

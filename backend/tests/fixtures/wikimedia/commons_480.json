@@ -1,0 +1,47 @@
+{
+  "batchcomplete": true,
+  "query": {
+    "pages": [
+      {
+        "ns": 6,
+        "title": "File:Synthetic station.jpg",
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 123456,
+            "width": 2400,
+            "height": 1600,
+            "thumburl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Synthetic_station.jpg/480px-Synthetic_station.jpg",
+            "thumbwidth": 480,
+            "thumbheight": 320,
+            "url": "https://upload.wikimedia.org/wikipedia/commons/0/0a/Synthetic_station.jpg",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Synthetic_station.jpg",
+            "mime": "image/jpeg",
+            "extmetadata": {
+              "LicenseShortName": {
+                "value": "CC BY-SA 4.0",
+                "source": "commons-desc-page"
+              },
+              "LicenseUrl": {
+                "value": "https://creativecommons.org/licenses/by-sa/4.0",
+                "source": "commons-desc-page"
+              },
+              "AttributionRequired": {
+                "value": "true",
+                "source": "commons-desc-page"
+              },
+              "Artist": {
+                "value": "<a href=\"//commons.wikimedia.org/wiki/User:Example\" title=\"User:Example\">Example   Photographer</a>",
+                "source": "commons-desc-page"
+              },
+              "ImageDescription": {
+                "value": "<p>The <b>made-up</b> station seen from a departing test vehicle</p>",
+                "source": "commons-desc-page"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

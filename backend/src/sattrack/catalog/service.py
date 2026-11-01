@@ -5,7 +5,15 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass
 
-from sattrack.catalog.domain import GroupInfo, OrbitalElements, SatelliteFilters, SatelliteInfo
+from sattrack.catalog.domain import (
+    AboutInfo,
+    GroupInfo,
+    ImageFile,
+    ImageWidth,
+    OrbitalElements,
+    SatelliteFilters,
+    SatelliteInfo,
+)
 from sattrack.catalog.repository import CatalogRepository
 
 
@@ -29,10 +37,24 @@ class SatellitePage:
     offset: int
 
 
+class AboutNotFoundError(LookupError):
+    def __init__(self, norad_id: int) -> None:
+        super().__init__(f"No description for NORAD ID {norad_id}")
+        self.norad_id = norad_id
+
+
+class ImageNotFoundError(LookupError):
+    def __init__(self, norad_id: int) -> None:
+        super().__init__(f"No image for NORAD ID {norad_id}")
+        self.norad_id = norad_id
+
+
 @dataclass(frozen=True, slots=True)
 class SatelliteDetail:
     satellite: SatelliteInfo
     latest_elements: OrbitalElements | None
+    has_about: bool
+    has_image: bool
 
 
 class CatalogService:
@@ -52,7 +74,25 @@ class CatalogService:
         satellite = self._repository.get_satellite(norad_id)
         if satellite is None:
             raise SatelliteNotFoundError(norad_id)
-        return SatelliteDetail(satellite, self._repository.latest_elements(norad_id))
+        has_about, has_image = self._repository.about_flags(norad_id)
+        return SatelliteDetail(
+            satellite=satellite,
+            latest_elements=self._repository.latest_elements(norad_id),
+            has_about=has_about,
+            has_image=has_image,
+        )
+
+    def get_about(self, norad_id: int) -> AboutInfo:
+        about = self._repository.get_about(norad_id)
+        if about is None:
+            raise AboutNotFoundError(norad_id)
+        return about
+
+    def get_image(self, norad_id: int, width: ImageWidth) -> ImageFile:
+        image = self._repository.get_image(norad_id, width)
+        if image is None:
+            raise ImageNotFoundError(norad_id)
+        return image
 
     def group_elements_etag(self, group: str, limit: int, offset: int) -> str:
         """Entity tag for a page of a group's element sets.

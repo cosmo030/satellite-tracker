@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
-from enum import StrEnum
+from enum import IntEnum, StrEnum
 from typing import Any
 
 MINUTES_PER_DAY = 1440.0
@@ -122,6 +122,122 @@ class SatelliteFilters:
     orbit_class: OrbitClass | None = None
     country: str | None = None
     launch_year: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class SatelliteIdentity:
+    """The identifiers other catalogues use to refer to an object."""
+
+    norad_id: int
+    intl_designator: str | None
+
+
+# --- Descriptions and images from Wikimedia (written by the enrich module) -------------------
+
+
+class AboutStatus(StrEnum):
+    OK = "ok"
+    # Nothing usable was found; retried on the next periodic refresh.
+    NO_MATCH = "no_match"
+    ERROR = "error"
+
+
+class MatchMethod(StrEnum):
+    NORAD = "norad"
+    COSPAR = "cospar"
+
+
+class AboutScope(StrEnum):
+    # The text describes this object.
+    OBJECT = "object"
+    # The text describes the constellation or series the object belongs to.
+    CONSTELLATION = "constellation"
+
+
+class SummarySource(StrEnum):
+    WIKIPEDIA = "wikipedia"
+    WIKIDATA = "wikidata"
+
+
+class ImageWidth(IntEnum):
+    SMALL = 480
+    LARGE = 960
+
+
+@dataclass(frozen=True, slots=True)
+class ImageCredit:
+    """Who made an image and under which license; always shown with the image."""
+
+    source_file: str
+    source_url: str
+    artist: str
+    license_short: str
+    license_url: str | None
+    attribution_required: bool
+    alt_text: str
+
+
+@dataclass(frozen=True, slots=True)
+class ImageVariant:
+    data: bytes
+    width: int
+    height: int
+
+
+@dataclass(frozen=True, slots=True)
+class SatelliteImage:
+    """An object's image in the two stored widths, with its credit."""
+
+    small: ImageVariant
+    large: ImageVariant
+    mime: str
+    sha256: str
+    credit: ImageCredit
+
+
+@dataclass(frozen=True, slots=True)
+class SatelliteAbout:
+    """What Wikimedia says about an object. Content fields are empty unless status is OK."""
+
+    norad_id: int
+    status: AboutStatus
+    fetched_at: datetime
+    wikidata_qid: str | None = None
+    match_method: MatchMethod | None = None
+    scope: AboutScope | None = None
+    title: str | None = None
+    summary: str | None = None
+    summary_source: SummarySource | None = None
+    summary_url: str | None = None
+    summary_revision_at: datetime | None = None
+    categories: tuple[str, ...] = ()
+    operators: tuple[str, ...] = ()
+    manufacturers: tuple[str, ...] = ()
+    image: SatelliteImage | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ImageInfo:
+    """Image metadata for the about response (no bytes)."""
+
+    width_small: int
+    height_small: int
+    credit: ImageCredit
+
+
+@dataclass(frozen=True, slots=True)
+class AboutInfo:
+    """A stored description, as served by the API."""
+
+    about: SatelliteAbout
+    image: ImageInfo | None
+
+
+@dataclass(frozen=True, slots=True)
+class ImageFile:
+    data: bytes
+    mime: str
+    sha256: str
 
 
 # Display names for the CelesTrak groups we know; unknown slugs fall back to the slug.

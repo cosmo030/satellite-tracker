@@ -12,14 +12,33 @@ from sqlalchemy.dialects.postgresql import distinct_on, insert
 from sqlalchemy.orm import Session
 
 from sattrack.catalog.domain import (
+    AboutInfo,
+    AboutScope,
+    AboutStatus,
     GroupInfo,
+    ImageCredit,
+    ImageFile,
+    ImageInfo,
+    ImageWidth,
+    MatchMethod,
     OrbitalElements,
     OrbitClass,
     SatcatRecord,
+    SatelliteAbout,
     SatelliteFilters,
+    SatelliteIdentity,
+    SatelliteImage,
     SatelliteInfo,
+    SummarySource,
 )
-from sattrack.catalog.models import GroupRow, OrbitalElementsRow, SatelliteGroupRow, SatelliteRow
+from sattrack.catalog.models import (
+    GroupRow,
+    OrbitalElementsRow,
+    SatelliteAboutRow,
+    SatelliteGroupRow,
+    SatelliteImageRow,
+    SatelliteRow,
+)
 
 # PostgreSQL limits a statement to 65535 bind parameters; batches stay well below it.
 _INSERT_BATCH_SIZE = 1000
@@ -193,6 +212,96 @@ class CatalogRepository:
             updated += result.rowcount  # type: ignore[attr-defined]  # CursorResult for UPDATE
         return updated
 
+    # --- Descriptions and images (written by the enrich module) -------------------------------
+
+    def enrichment_targets(self, refresh_before: datetime | None) -> list[SatelliteIdentity]:
+        """Objects to fetch descriptions for, by NORAD ID.
+
+        With ``refresh_before``: objects never fetched, whose last fetch failed, or fetched
+        before that time. Without it: every object.
+        """
+        stmt = (
+            select(SatelliteRow.norad_id, SatelliteRow.intl_designator)
+            .outerjoin(SatelliteAboutRow, SatelliteAboutRow.norad_id == SatelliteRow.norad_id)
+            .order_by(SatelliteRow.norad_id)
+        )
+        if refresh_before is not None:
+            stmt = stmt.where(
+                or_(
+                    SatelliteAboutRow.norad_id.is_(None),
+                    SatelliteAboutRow.status == AboutStatus.ERROR.value,
+                    SatelliteAboutRow.fetched_at < refresh_before,
+                )
+            )
+        return [
+            SatelliteIdentity(norad_id=norad_id, intl_designator=designator)
+            for norad_id, designator in self._session.execute(stmt)
+        ]
+
+    def save_about(self, about: SatelliteAbout) -> None:
+        """Replace an object's description and image with the result of a completed fetch."""
+        values = _about_row_values(about)
+        stmt = insert(SatelliteAboutRow).values(values)
+        self._session.execute(
+            stmt.on_conflict_do_update(
+                index_elements=[SatelliteAboutRow.norad_id],
+                set_={name: stmt.excluded[name] for name in values if name != "norad_id"},
+            )
+        )
+        self._session.execute(
+            delete(SatelliteImageRow).where(SatelliteImageRow.norad_id == about.norad_id)
+        )
+        if about.image is not None:
+            self._session.execute(
+                insert(SatelliteImageRow).values(
+                    _image_row_values(about.norad_id, about.image, about.fetched_at)
+                )
+            )
+
+    def get_about(self, norad_id: int) -> AboutInfo | None:
+        """The stored description of an object, if one was found (status OK)."""
+        about_row = self._session.get(SatelliteAboutRow, norad_id)
+        if about_row is None or about_row.status != AboutStatus.OK.value:
+            return None
+        image_stmt = select(
+            SatelliteImageRow.width_480,
+            SatelliteImageRow.height_480,
+            *_IMAGE_CREDIT_COLUMNS,
+        ).where(SatelliteImageRow.norad_id == norad_id)
+        image_row = self._session.execute(image_stmt).mappings().first()
+        image = (
+            ImageInfo(
+                width_small=image_row["width_480"],
+                height_small=image_row["height_480"],
+                credit=_to_image_credit(image_row),
+            )
+            if image_row
+            else None
+        )
+        return AboutInfo(about=_to_about(about_row), image=image)
+
+    def get_image(self, norad_id: int, width: ImageWidth) -> ImageFile | None:
+        column = (
+            SatelliteImageRow.image_480
+            if width is ImageWidth.SMALL
+            else SatelliteImageRow.image_960
+        )
+        stmt = select(column, SatelliteImageRow.mime, SatelliteImageRow.sha256).where(
+            SatelliteImageRow.norad_id == norad_id
+        )
+        row = self._session.execute(stmt).first()
+        return ImageFile(data=row[0], mime=row[1], sha256=row[2]) if row else None
+
+    def about_flags(self, norad_id: int) -> tuple[bool, bool]:
+        """Whether an object has a description and whether it has an image."""
+        has_about = select(SatelliteAboutRow.norad_id).where(
+            SatelliteAboutRow.norad_id == norad_id,
+            SatelliteAboutRow.status == AboutStatus.OK.value,
+        )
+        has_image = select(SatelliteImageRow.norad_id).where(SatelliteImageRow.norad_id == norad_id)
+        about, image = self._session.execute(select(has_about.exists(), has_image.exists())).one()
+        return bool(about), bool(image)
+
     # --- Helpers -------------------------------------------------------------------------------
 
     @staticmethod
@@ -256,6 +365,90 @@ def _elements_to_row_values(e: OrbitalElements, fetched_at: datetime) -> dict[st
         "raw_omm": e.raw,
         "fetched_at": fetched_at,
     }
+
+
+_IMAGE_CREDIT_COLUMNS = (
+    SatelliteImageRow.source_file,
+    SatelliteImageRow.source_url,
+    SatelliteImageRow.artist,
+    SatelliteImageRow.license_short,
+    SatelliteImageRow.license_url,
+    SatelliteImageRow.attribution_required,
+    SatelliteImageRow.alt_text,
+)
+
+
+def _about_row_values(about: SatelliteAbout) -> dict[str, Any]:
+    return {
+        "norad_id": about.norad_id,
+        "status": about.status.value,
+        "wikidata_qid": about.wikidata_qid,
+        "match_method": about.match_method.value if about.match_method else None,
+        "scope": about.scope.value if about.scope else None,
+        "title": about.title,
+        "summary": about.summary,
+        "summary_source": about.summary_source.value if about.summary_source else None,
+        "summary_url": about.summary_url,
+        "summary_revision_at": about.summary_revision_at,
+        "categories": list(about.categories),
+        "operators": list(about.operators),
+        "manufacturers": list(about.manufacturers),
+        "fetched_at": about.fetched_at,
+    }
+
+
+def _image_row_values(norad_id: int, image: SatelliteImage, fetched_at: datetime) -> dict[str, Any]:
+    credit = image.credit
+    return {
+        "norad_id": norad_id,
+        "image_480": image.small.data,
+        "image_960": image.large.data,
+        "mime": image.mime,
+        "width_480": image.small.width,
+        "height_480": image.small.height,
+        "width_960": image.large.width,
+        "height_960": image.large.height,
+        "sha256": image.sha256,
+        "source_file": credit.source_file,
+        "source_url": credit.source_url,
+        "artist": credit.artist,
+        "license_short": credit.license_short,
+        "license_url": credit.license_url,
+        "attribution_required": credit.attribution_required,
+        "alt_text": credit.alt_text,
+        "fetched_at": fetched_at,
+    }
+
+
+def _to_about(row: SatelliteAboutRow) -> SatelliteAbout:
+    return SatelliteAbout(
+        norad_id=row.norad_id,
+        status=AboutStatus(row.status),
+        fetched_at=row.fetched_at,
+        wikidata_qid=row.wikidata_qid,
+        match_method=MatchMethod(row.match_method) if row.match_method else None,
+        scope=AboutScope(row.scope) if row.scope else None,
+        title=row.title,
+        summary=row.summary,
+        summary_source=SummarySource(row.summary_source) if row.summary_source else None,
+        summary_url=row.summary_url,
+        summary_revision_at=row.summary_revision_at,
+        categories=tuple(row.categories),
+        operators=tuple(row.operators),
+        manufacturers=tuple(row.manufacturers),
+    )
+
+
+def _to_image_credit(row: Any) -> ImageCredit:
+    return ImageCredit(
+        source_file=row["source_file"],
+        source_url=row["source_url"],
+        artist=row["artist"],
+        license_short=row["license_short"],
+        license_url=row["license_url"],
+        attribution_required=row["attribution_required"],
+        alt_text=row["alt_text"],
+    )
 
 
 def _to_satellite_info(row: SatelliteRow) -> SatelliteInfo:

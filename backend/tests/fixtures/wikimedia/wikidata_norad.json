@@ -1,0 +1,28 @@
+{
+  "head": {"vars": ["item", "id", "sitelinks", "enwiki", "description", "p18", "classes", "operators", "manufacturers", "parts"]},
+  "results": {"bindings": [
+    {
+      "item": {"type": "uri", "value": "http://www.wikidata.org/entity/Q900001"},
+      "id": {"type": "literal", "value": "25544"},
+      "sitelinks": {"type": "literal", "value": "50"},
+      "enwiki": {"type": "uri", "value": "https://en.wikipedia.org/wiki/Synthetic_Station"},
+      "description": {"type": "literal", "value": "made-up orbital station used in tests"},
+      "p18": {"type": "uri", "value": "http://commons.wikimedia.org/wiki/Special:FilePath/Synthetic%20station.jpg"},
+      "classes": {"type": "literal", "value": "Q900100"},
+      "operators": {"type": "literal", "value": "Agency B|Agency A"},
+      "manufacturers": {"type": "literal", "value": ""},
+      "parts": {"type": "literal", "value": ""}
+    },
+    {
+      "item": {"type": "uri", "value": "http://www.wikidata.org/entity/Q900002"},
+      "id": {"type": "literal", "value": "25544"},
+      "sitelinks": {"type": "literal", "value": "5"},
+      "enwiki": {"type": "uri", "value": "https://en.wikipedia.org/wiki/Synthetic_Station_module"},
+      "description": {"type": "literal", "value": "module of the made-up station"},
+      "classes": {"type": "literal", "value": "Q900101"},
+      "operators": {"type": "literal", "value": ""},
+      "manufacturers": {"type": "literal", "value": "Builder Co"},
+      "parts": {"type": "literal", "value": "Q900001 https://en.wikipedia.org/wiki/Synthetic_Station"}
+    }
+  ]}
+}

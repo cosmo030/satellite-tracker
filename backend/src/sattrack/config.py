@@ -5,12 +5,16 @@ Other modules receive a ``Settings`` instance; nothing else reads environment va
 
 from __future__ import annotations
 
+import re
 from typing import Annotated, Literal
 
 from pydantic import Field, PostgresDsn, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR"]
+
+_EMAIL = re.compile(r"[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,190}\.[A-Za-z]{2,24}")
+_HTTPS_URL = re.compile(r"https://[A-Za-z0-9.-]{1,190}(?:/[A-Za-z0-9._~%/-]{0,200})?")
 
 # Groups ingested when SATTRACK_INGEST_GROUPS is not set. Kept small on purpose:
 # CelesTrak enforces limits on the large "active" and "starlink" sets.
@@ -33,6 +37,30 @@ class Settings(BaseSettings):
     http_timeout_seconds: float = Field(default=30.0, gt=0, le=300)
     ingest_groups: Annotated[tuple[str, ...], NoDecode] = DEFAULT_INGEST_GROUPS
     cors_allowed_origins: Annotated[tuple[str, ...], NoDecode] = ()
+    # Descriptions and images from Wikimedia (sattrack.enrich). The contact is checked when the
+    # enrich job starts, not here, so the API runs without it.
+    enrich_enabled: bool = True
+    enrich_contact: str | None = Field(
+        default=None,
+        description="Email or https URL put in the User-Agent of every Wikimedia request.",
+    )
+    enrich_interval_hours: int = Field(default=168, ge=24, le=24 * 90)
+
+    @field_validator("enrich_contact", mode="before")
+    @classmethod
+    def _blank_contact_is_none(cls, value: object) -> object:
+        return None if isinstance(value, str) and not value.strip() else value
+
+    @field_validator("enrich_contact")
+    @classmethod
+    def _validate_contact(cls, contact: str | None) -> str | None:
+        if contact is None:
+            return None
+        contact = contact.strip()
+        # Goes into an HTTP header: allow only an email address or an https URL.
+        if not (_EMAIL.fullmatch(contact) or _HTTPS_URL.fullmatch(contact)):
+            raise ValueError("must be an email address or an https:// URL")
+        return contact
 
     @field_validator("ingest_groups", "cors_allowed_origins", mode="before")
     @classmethod

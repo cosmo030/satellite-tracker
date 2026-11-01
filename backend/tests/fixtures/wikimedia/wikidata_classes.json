@@ -1,0 +1,8 @@
+{
+  "head": {"vars": ["class", "target"]},
+  "results": {"bindings": [
+    {"class": {"type": "uri", "value": "http://www.wikidata.org/entity/Q900100"}, "target": {"type": "uri", "value": "http://www.wikidata.org/entity/Q25956"}},
+    {"class": {"type": "uri", "value": "http://www.wikidata.org/entity/Q900100"}, "target": {"type": "uri", "value": "http://www.wikidata.org/entity/Q7217761"}},
+    {"class": {"type": "uri", "value": "http://www.wikidata.org/entity/Q1285444"}, "target": {"type": "uri", "value": "http://www.wikidata.org/entity/Q1285444"}}
+  ]}
+}

@@ -18,7 +18,7 @@ from sattrack.catalog import CatalogRepository, OrbitalElements, SatcatRecord, g
 from sattrack.ingest.celestrak import CelesTrakResponseError, CelesTrakUnavailableError, FetchResult
 from sattrack.ingest.repository import FetchAttempt, FetchLogRepository, FetchSource
 from sattrack.shared import Clock
-from sattrack.shared.db import transaction
+from sattrack.shared.db import WORKER_LOCK_KEY, advisory_lock, transaction
 
 logger = logging.getLogger(__name__)
 
@@ -105,9 +105,11 @@ class IngestService:
         no further requests are made in this run.
         """
         report = IngestReport()
-        for group in self._groups:
-            self._refresh_elements_if_due(group, report)
-            self._refresh_satcat_if_due(group, report)
+        # The enrich job waits for this lock, so it never runs during an ingest run.
+        with advisory_lock(self._session_factory, WORKER_LOCK_KEY):
+            for group in self._groups:
+                self._refresh_elements_if_due(group, report)
+                self._refresh_satcat_if_due(group, report)
         logger.info(
             "Ingest run finished refreshed=%s skipped=%s elements_added=%d "
             "satcat_updated=%d failed=%s",
