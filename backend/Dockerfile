@@ -1,7 +1,7 @@
 # Backend image: runs the API (default), the ingest worker or migrations.
 # Build: docker build -t satellite-tracker-backend backend/
 
-FROM python:3.13-slim-bookworm AS build
+FROM python:3.15-slim-bookworm AS build
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never
 RUN pip install --no-cache-dir uv==0.11.32
 WORKDIR /app
@@ -10,7 +10,7 @@ RUN uv sync --locked --no-dev --no-install-project
 COPY src ./src
 RUN uv sync --locked --no-dev
 
-FROM python:3.13-slim-bookworm AS runtime
+FROM python:3.15-slim-bookworm AS runtime
 RUN useradd --system --uid 10001 --no-create-home sattrack
 WORKDIR /app
 COPY --from=build /app/.venv ./.venv
