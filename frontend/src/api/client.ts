@@ -56,6 +56,54 @@ export interface ElementSet {
 export interface SatelliteDetail {
   satellite: Satellite;
   latest_elements: ElementSet | null;
+  /** A description is available from ``satelliteAbout``. */
+  has_about: boolean;
+  has_image: boolean;
+}
+
+/** Purpose categories, in display priority order. */
+export type AboutCategory =
+  | 'space_station'
+  | 'crewed'
+  | 'telescope'
+  | 'earth_observation'
+  | 'weather'
+  | 'navigation'
+  | 'communications'
+  | 'science'
+  | 'technology'
+  | 'amateur'
+  | 'military'
+  | 'cubesat';
+
+/** A Wikimedia Commons image served by our API; always shown with its credit. */
+export interface AboutImage {
+  url_480: string;
+  url_960: string;
+  width_480: number;
+  height_480: number;
+  artist: string;
+  license_short: string;
+  license_url: string | null;
+  source_url: string;
+  alt_text: string;
+}
+
+/** What Wikimedia says about an object (descriptions are CC BY-SA 4.0 or CC0). */
+export interface SatelliteAbout {
+  norad_id: number;
+  /** "constellation": the text describes the constellation the object belongs to. */
+  scope: 'object' | 'constellation';
+  title: string | null;
+  summary: string | null;
+  summary_source: 'wikipedia' | 'wikidata' | null;
+  summary_url: string | null;
+  summary_license: string | null;
+  categories: AboutCategory[];
+  operators: string[];
+  manufacturers: string[];
+  image: AboutImage | null;
+  fetched_at: string;
 }
 
 export interface SatelliteSearch {
@@ -128,6 +176,11 @@ export class ApiClient {
 
   satelliteDetail(noradId: number, signal?: AbortSignal): Promise<SatelliteDetail> {
     return this.get<SatelliteDetail>(`/satellites/${noradId}`, signal);
+  }
+
+  /** Description and image credit; rejects with ``ApiError`` 404 when there is none. */
+  satelliteAbout(noradId: number, signal?: AbortSignal): Promise<SatelliteAbout> {
+    return this.get<SatelliteAbout>(`/satellites/${noradId}/about`, signal);
   }
 
   private async get<T>(path: string, signal?: AbortSignal): Promise<T> {

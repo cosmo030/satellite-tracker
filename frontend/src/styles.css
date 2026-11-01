@@ -53,6 +53,7 @@
   --bad: #f2776c;
   --radius-tile: 8px;
   --radius-chip: 4px;
+  --radius-media: 6px;
 }
 
 [data-skin='frosted'] {
@@ -79,6 +80,7 @@
   --bad: #ff8f84;
   --radius-tile: 14px;
   --radius-chip: 6px;
+  --radius-media: 10px;
 }
 
 /* ---- Type and base ---- */
@@ -826,6 +828,209 @@ a {
   margin-top: 10px;
 }
 
+/* About: description, purpose and image from Wikimedia, below "More details". */
+
+.about {
+  display: grid;
+  grid-template-rows: 1fr;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--tile-edge);
+  animation: about-in 160ms ease-out;
+}
+
+@keyframes about-in {
+  from {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+
+.about-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.about-media {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--tile-edge);
+  border-radius: var(--radius-media);
+  background: var(--chip);
+  cursor: zoom-in;
+}
+
+.app.narrow .about-media {
+  aspect-ratio: 16 / 9;
+}
+
+.about-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.about-media img.loaded {
+  opacity: 1;
+}
+
+.about-credit {
+  display: block;
+  margin-top: 6px;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.about-credit:hover,
+.about-source a:hover,
+.viewer-links a:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.about-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.about-chips:first-child {
+  margin-top: 0;
+}
+
+.about-chips .chip {
+  cursor: default;
+}
+
+.about-chips .chip:hover {
+  background: var(--chip);
+}
+
+.about-heading {
+  margin: 10px 0 0;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.about-inner > .about-heading:first-child {
+  margin-top: 0;
+}
+
+.about-summary {
+  margin-top: 4px;
+}
+
+.about-source {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.about-source a {
+  text-decoration: none;
+}
+
+.about-facts {
+  margin-top: 10px;
+}
+
+.about-inner > .about-facts:first-child {
+  margin-top: 0;
+}
+
+.about-facts > div {
+  display: grid;
+  grid-template-columns: minmax(84px, auto) minmax(0, 1fr);
+  gap: 12px;
+  padding: 6px 0;
+  border-top: 1px solid var(--chip);
+}
+
+.about-facts > div:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.about-facts dt {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* Image viewer: modal over a dark scrim, outside the tiles. */
+
+.viewer-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(0 0 0 / 60%);
+}
+
+.viewer {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  max-width: min(960px, 100%);
+  max-height: 100%;
+  padding: 12px;
+  overflow: auto;
+}
+
+[data-skin='frosted'] .viewer {
+  background: var(--tile);
+}
+
+.viewer-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: var(--overlay);
+}
+
+.viewer-image {
+  display: block;
+  width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: var(--radius-media);
+}
+
+.viewer-credit {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.viewer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.viewer-links a {
+  text-decoration: none;
+}
+
 /* ---- Timeline ---- */
 
 .timeline-tile .tile-body {
@@ -1164,5 +1369,9 @@ a {
   *::before,
   *::after {
     transition: none !important;
+  }
+
+  .about {
+    animation: none;
   }
 }

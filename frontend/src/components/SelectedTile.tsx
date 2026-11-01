@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import type { ElementSet, OrbitClass, SatelliteDetail } from '../api/client';
+import type { ElementSet, OrbitClass, SatelliteAbout, SatelliteDetail } from '../api/client';
 import {
   epochAgeMs,
   epochFreshness,
@@ -13,6 +13,7 @@ import {
 } from '../orbit/format';
 import type { SatelliteState } from '../orbit/propagation';
 import { objectTypeLabel, ownerName } from '../ui/catalog';
+import { AboutBlock } from './AboutBlock';
 import { CloseIcon } from './icons';
 import { RollingNumber } from './RollingNumber';
 import { Tile } from './Tile';
@@ -23,6 +24,8 @@ interface SelectedTileProps {
   selectedId: number | null;
   detail: SatelliteDetail | null;
   state: SatelliteState | null;
+  /** Description from Wikimedia; null leaves the tile exactly as it is without one. */
+  about?: SatelliteAbout | null;
   now: Date;
   error: string | null;
   onClose: () => void;
@@ -33,6 +36,7 @@ export function SelectedTile({
   selectedId,
   detail,
   state,
+  about = null,
   now,
   error,
   onClose,
@@ -47,6 +51,7 @@ export function SelectedTile({
           selectedId={selectedId}
           detail={detail}
           state={state}
+          about={about}
           now={now}
           error={error}
         />
@@ -81,6 +86,7 @@ function SelectedBody({
   selectedId,
   detail,
   state,
+  about = null,
   now,
   error,
 }: Omit<SelectedTileProps, 'onClose'>) {
@@ -93,16 +99,18 @@ function SelectedBody({
   }
   if (error) return <p className="status error">Could not load this satellite.</p>;
   if (!detail) return <p className="status">Loading…</p>;
-  return <SatelliteSummary detail={detail} state={state} now={now} />;
+  return <SatelliteSummary detail={detail} state={state} about={about} now={now} />;
 }
 
 function SatelliteSummary({
   detail,
   state,
+  about,
   now,
 }: {
   detail: SatelliteDetail;
   state: SatelliteState | null;
+  about: SatelliteAbout | null;
   now: Date;
 }) {
   const { satellite, latest_elements: elements } = detail;
@@ -130,6 +138,9 @@ function SatelliteSummary({
         </Fact>
       </dl>
       <MoreDetails detail={detail} />
+      {about?.norad_id === satellite.norad_id && (
+        <AboutBlock about={about} satelliteName={satellite.name} />
+      )}
     </>
   );
 }
