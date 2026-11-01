@@ -19,9 +19,12 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@fontsource-variable/instrument-sans": "^5.3.0",
+    "@fontsource-variable/tektur": "^5.3.0",
     "cesium": "^1.146.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "react-resizable-panels": "^4.16.0",
     "satellite.js": "^7.1.0"
   },
   "devDependencies": {
