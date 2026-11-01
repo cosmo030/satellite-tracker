@@ -1,0 +1,37 @@
+[
+  {
+    "OBJECT_NAME": "ISS (ZARYA)",
+    "OBJECT_ID": "1998-067A",
+    "NORAD_CAT_ID": 25544,
+    "OBJECT_TYPE": "PAY",
+    "OPS_STATUS_CODE": "+",
+    "OWNER": "ISS",
+    "LAUNCH_DATE": "1998-11-20",
+    "LAUNCH_SITE": "TYMSC",
+    "DECAY_DATE": "",
+    "PERIOD": 92.9,
+    "INCLINATION": 51.64,
+    "APOGEE": 420,
+    "PERIGEE": 415,
+    "RCS": null,
+    "DATA_STATUS_CODE": "",
+    "ORBIT_CENTER": "EA",
+    "ORBIT_TYPE": "ORB"
+  },
+  {
+    "OBJECT_NAME": "TESTSAT NAV-1",
+    "OBJECT_ID": "2026-101A",
+    "NORAD_CAT_ID": 100173,
+    "OBJECT_TYPE": "PAY",
+    "OWNER": "ESA",
+    "LAUNCH_DATE": "2026-07-20"
+  },
+  {
+    "OBJECT_NAME": "TESTSAT GEO-2",
+    "OBJECT_ID": "2020-050A",
+    "NORAD_CAT_ID": 45001,
+    "OBJECT_TYPE": "PAY",
+    "OWNER": "US",
+    "LAUNCH_DATE": "2020-06-01"
+  }
+]

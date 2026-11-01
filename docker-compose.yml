@@ -1,0 +1,77 @@
+# Full stack: PostgreSQL, migrations, API, ingest worker and the web frontend.
+#   docker compose up -d --build      then open http://localhost:8080
+# For local development you can start only the database: docker compose up -d db
+
+name: satellite-tracker
+
+x-backend-env: &backend-env
+  SATTRACK_DATABASE_URL: postgresql+psycopg://sattrack:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/sattrack
+  SATTRACK_LOG_LEVEL: ${SATTRACK_LOG_LEVEL:-INFO}
+  SATTRACK_INGEST_GROUPS: ${SATTRACK_INGEST_GROUPS:-stations,visual,gps-ops,galileo,weather,science}
+  SATTRACK_HTTP_TIMEOUT_SECONDS: ${SATTRACK_HTTP_TIMEOUT_SECONDS:-30}
+  SATTRACK_CELESTRAK_BASE_URL: ${SATTRACK_CELESTRAK_BASE_URL:-https://celestrak.org}
+  SATTRACK_CORS_ALLOWED_ORIGINS: ${SATTRACK_CORS_ALLOWED_ORIGINS:-}
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sattrack
+      POSTGRES_DB: sattrack
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/create-test-database.sql:/docker-entrypoint-initdb.d/10-test-database.sql:ro
+    ports:
+      # Published on localhost only, for running the backend outside docker.
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sattrack -d sattrack"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  migrate:
+    build: ./backend
+    command: ["alembic", "upgrade", "head"]
+    environment: *backend-env
+    healthcheck:
+      disable: true  # the image's check probes the API port, which this container does not serve
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build: ./backend
+    environment: *backend-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  ingest:
+    build: ./backend
+    command: ["python", "-m", "sattrack.ingest"]
+    environment: *backend-env
+    healthcheck:
+      disable: true  # the image's check probes the API port, which this container does not serve
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  web:
+    build: ./frontend
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:8080}
+      API_UPSTREAM: api:8000
+    ports:
+      - "8080:8080"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  pgdata:

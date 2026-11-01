@@ -1,0 +1,27 @@
+# Serves the built frontend and forwards /api to the backend container.
+# SITE_ADDRESS defaults to plain HTTP on :8080; set it to a domain name in production
+# and Caddy obtains a TLS certificate automatically.
+{$SITE_ADDRESS::8080} {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy {$API_UPSTREAM:api:8000}
+	}
+
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		# CesiumJS needs WebAssembly, blob: workers and inline styles.
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'"
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		-Server
+	}
+
+	@hashed path /assets/*
+	header @hashed Cache-Control "public, max-age=31536000, immutable"
+}
