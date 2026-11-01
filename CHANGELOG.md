@@ -6,7 +6,21 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Redesigned the web UI as a tiled instrument panel around the globe (UI redesign, part 1):
+  Groups, Search, globe viewport, Timeline, Selected and Next passes tiles with resizable,
+  collapsible splitters whose layout is remembered; Instrument and Frosted glass skins in a new
+  Settings popover; self-hosted Tektur and Instrument Sans fonts with tabular figures; layouts for
+  medium and phone-sized screens. See ADR 0005.
+- The globe now shows day/night lighting; only the selected satellite uses the accent colour.
+- Selected satellites show the country name instead of the SATCAT owner code.
+
 ### Added
+
+- `Ctrl K` / `⌘K` focuses search from anywhere.
+- Toggles for the orbit path, ground track and day/night lighting on the globe.
+- Timeline tile with the UTC clock and the current UTC day (time controls follow in phase 2).
 
 - 3D globe (CesiumJS) with live positions for a satellite group, computed with SGP4 in a
   Web Worker at 2 Hz.

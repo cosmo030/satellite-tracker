@@ -12,10 +12,17 @@ and draws it on a CesiumJS globe, with search, filters, orbit paths and ground t
 ## Features
 
 - Live positions of a satellite group (space stations, GPS, Galileo, weather, ...) on a 3D globe
-- Search by name or NORAD ID; filter by orbit class (LEO/MEO/GEO/HEO), country and launch year
-- Details for the selected satellite: altitude, speed, position, inclination, period, element age
-- Orbit path and ground track for the selected satellite
+  with day/night lighting
+- A tiled workspace around the globe: drag the gaps between tiles to resize them, double-click a
+  gap (or press Enter on it) to collapse a tile; the layout is remembered and can be reset
+- Two skins, Instrument (solid) and Frosted glass, switchable in Settings
+- Search by name or NORAD ID (`Ctrl K` / `⌘K` from anywhere); filter by orbit class
+  (LEO/MEO/GEO/HEO), country and launch year
+- Details for the selected satellite: altitude, speed, position, inclination, period, launch date
+  and element age
+- Orbit path and ground track for the selected satellite, each switchable
 - Warning when orbital elements are more than 3 days old
+- Layouts for wide, medium (under 1100 px) and phone-sized screens (under 760 px)
 - An ingest worker that follows the [CelesTrak usage policy](https://celestrak.org/usage-policy.php):
   one download per group per update, and a full stop on any non-200 response
 
