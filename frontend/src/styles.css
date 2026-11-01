@@ -208,13 +208,16 @@ a {
 }
 
 /*
- * A slot is one digit wide (tabular figures) and one line tall. clip-path, unlike overflow,
- * clips the strip without moving the slot's baseline off the text around it.
+ * A slot is one digit wide (tabular figures) and exactly one line tall, like every digit in its
+ * strip: equal heights mean a digit far down the strip (index 17 for a 7) lands exactly in the
+ * slot, with no rounding difference multiplied along the way. overflow: clip hides the rest of
+ * the strip and, unlike clip-path, also keeps it out of the scrollable area of lists.
  */
 .digit-slot {
   position: relative;
   display: inline-block;
-  clip-path: inset(0);
+  height: 1lh;
+  overflow: clip;
 }
 
 .digit-sizer {
@@ -241,6 +244,7 @@ a {
 
 .digit-strip > span {
   display: block;
+  height: 1lh;
 }
 
 /* ---- Globe stage (under the workspace) ---- */
