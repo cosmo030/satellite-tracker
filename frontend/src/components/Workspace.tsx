@@ -192,7 +192,7 @@ export function Workspace({
             onLayoutChanged={onLayoutChanged}
           >
             <Panel id="selected" minSize={SELECTED_MIN_PX}>
-              {tiles.selected}
+              <CountMotion value={expanded('right')}>{tiles.selected}</CountMotion>
             </Panel>
             {splitter('passes', 'Resize next passes panel', 'horizontal', -1)}
             <Panel {...tilePanel('passes')}>{tiles.passes}</Panel>

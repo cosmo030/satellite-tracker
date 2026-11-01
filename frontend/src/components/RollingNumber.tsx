@@ -16,8 +16,8 @@ import {
 } from '../ui/rolling';
 
 /**
- * Whether counts inside this part of the workspace may animate. The workspace turns it off for
- * collapsed tiles, where a count changes out of sight and should simply be set.
+ * Whether rolling numbers inside this part of the workspace may animate. The workspace turns it
+ * off for collapsed tiles, where a value changes out of sight and should simply be set.
  */
 export const CountMotion = createContext(true);
 
