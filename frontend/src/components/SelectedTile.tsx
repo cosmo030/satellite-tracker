@@ -14,6 +14,7 @@ import {
 import type { SatelliteState } from '../orbit/propagation';
 import { objectTypeLabel, ownerName } from '../ui/catalog';
 import { CloseIcon } from './icons';
+import { RollingNumber } from './RollingNumber';
 import { Tile } from './Tile';
 
 const MISSING = '—';
@@ -109,17 +110,7 @@ function SatelliteSummary({
     <>
       <h3 className="selected-name">{satellite.name}</h3>
       <p className="selected-sub">{subtitle(detail)}</p>
-      <div className="hero">
-        <HeroValue
-          value={state ? formatFixed(state.heightKm, 1) : MISSING}
-          label="altitude, km"
-          accent
-        />
-        <HeroValue
-          value={state ? formatFixed(state.speedKmPerS, 3) : MISSING}
-          label="speed, km/s"
-        />
-      </div>
+      <HeroRow state={state} satelliteId={satellite.norad_id} />
       <dl className="facts">
         <Fact label="Latitude" ident>
           {state ? formatDegrees(state.latitudeDeg) : MISSING}
@@ -160,18 +151,55 @@ function sentenceStart(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-function HeroValue({
-  value,
-  label,
-  accent = false,
-}: {
-  value: string;
+function HeroRow({ state, satelliteId }: { state: SatelliteState | null; satelliteId: number }) {
+  return (
+    <div className="hero">
+      <HeroValue
+        value={state ? state.heightKm : null}
+        decimals={1}
+        label="altitude, km"
+        satelliteId={satelliteId}
+        accent
+      />
+      <HeroValue
+        value={state ? state.speedKmPerS : null}
+        decimals={3}
+        label="speed, km/s"
+        satelliteId={satelliteId}
+      />
+    </div>
+  );
+}
+
+interface HeroValueProps {
+  value: number | null;
+  decimals: number;
   label: string;
+  /** The satellite shown: a new selection shows its values at once instead of rolling to them. */
+  satelliteId: number;
   accent?: boolean;
-}) {
+}
+
+/**
+ * Altitude or speed. Owner decision (beyond UI spec 6.1, which keeps telemetry still): the
+ * displayed value rolls when it changes, typically once a second.
+ */
+function HeroValue({ value, decimals, label, satelliteId, accent = false }: HeroValueProps) {
+  const format = (shown: number) => formatFixed(shown, decimals);
   return (
     <div>
-      <div className={accent ? 'hero-value accent' : 'hero-value'}>{value}</div>
+      <div className={accent ? 'hero-value accent' : 'hero-value'}>
+        {value === null ? (
+          MISSING
+        ) : (
+          // Rounded to what is displayed, so only visible changes count as changes.
+          <RollingNumber
+            key={satelliteId}
+            value={Number(value.toFixed(decimals))}
+            format={format}
+          />
+        )}
+      </div>
       <div className="hero-label">{label}</div>
     </div>
   );

@@ -3,11 +3,21 @@ import type { Ref } from 'react';
 import { formatUtcClock } from '../orbit/format';
 import { hourTicks, utcDayFraction } from '../ui/timeline';
 import { PlayIcon } from './icons';
+import { RollingNumber } from './RollingNumber';
 import { Tile } from './Tile';
 
 const TICKS = hourTicks();
 // Time controls (play, speed, scrubbing) arrive with phase 2; until then the tile shows live time.
 const NOT_YET = 'Time controls arrive in a later update';
+const MS_PER_SECOND = 1000;
+
+/**
+ * The clock rolls its changed digits each second (owner decision, beyond UI spec 6.1, which
+ * keeps the clock still). It counts whole seconds since the epoch, so it always rolls up.
+ */
+function clockText(epochSeconds: number): string {
+  return formatUtcClock(new Date(epochSeconds * MS_PER_SECOND));
+}
 
 interface TimelineTileProps {
   now: Date;
@@ -35,7 +45,7 @@ export function TimelineTile({ now, liveRef }: TimelineTileProps) {
           Live
         </button>
         <time className="clock" dateTime={now.toISOString()}>
-          {formatUtcClock(now)}
+          <RollingNumber value={Math.floor(now.getTime() / MS_PER_SECOND)} format={clockText} />
           <span className="unit">UTC</span>
         </time>
         <button
