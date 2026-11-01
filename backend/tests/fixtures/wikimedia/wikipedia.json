@@ -1,0 +1,21 @@
+{
+  "batchcomplete": true,
+  "query": {
+    "normalized": [{"fromencoded": false, "from": "Synthetic_Station", "to": "Synthetic Station"}],
+    "pages": [
+      {
+        "pageid": 9001, "ns": 0, "title": "Synthetic Station",
+        "extract": "The Synthetic Station (/ˈsɪnθɛtɪk/; Testish: Stantsiya) is a made-up orbital station   used only in tests. It has four modules. It was assembled by two made-up agencies. It is not a real spacecraft.",
+        "pageimage": "Synthetic_station.jpg",
+        "touched": "2026-10-20T08:00:00Z",
+        "fullurl": "https://en.wikipedia.org/wiki/Synthetic_Station"
+      },
+      {
+        "pageid": 9002, "ns": 0, "title": "Testnet",
+        "extract": "Testnet is a made-up navigation constellation used in tests. It has twelve satellites.",
+        "touched": "2026-09-01T12:00:00Z",
+        "fullurl": "https://en.wikipedia.org/wiki/Testnet"
+      }
+    ]
+  }
+}

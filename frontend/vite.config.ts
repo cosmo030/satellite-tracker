@@ -48,10 +48,11 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    // DOM tests opt in with a `// @vitest-environment jsdom` comment.
+    include: ['src/**/*.test.{ts,tsx}'],
     coverage: {
-      include: ['src/**/*.ts'],
-      exclude: ['src/**/*.test.ts', 'src/**/*.worker.ts'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.test.{ts,tsx}', 'src/**/*.worker.ts'],
     },
   },
 });

@@ -7,7 +7,7 @@ export
 BACKEND := cd backend &&
 FRONTEND := cd frontend &&
 
-.PHONY: help install db-up db-down migrate seed run-api run-ingest run-web \
+.PHONY: help install db-up db-down migrate seed run-api run-ingest run-enrich run-web \
 	format format-check lint typecheck test test-backend test-frontend build openapi check
 
 help: ## List the available commands
@@ -34,6 +34,9 @@ run-api: ## Run the API with auto-reload on http://localhost:8000
 
 run-ingest: ## Run one ingest pass against CelesTrak
 	$(BACKEND) uv run python -m sattrack.ingest --once
+
+run-enrich: ## Fetch descriptions and images from Wikimedia (needs SATTRACK_ENRICH_CONTACT)
+	$(BACKEND) uv run python -m sattrack.enrich --once
 
 run-web: ## Run the frontend dev server on http://localhost:5173
 	$(FRONTEND) npm run dev

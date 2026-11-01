@@ -1,6 +1,235 @@
 {
   "components": {
     "schemas": {
+      "AboutImageOut": {
+        "description": "A Wikimedia Commons image, served from this API; always shown with its credit.",
+        "properties": {
+          "alt_text": {
+            "description": "Empty when the file has no description",
+            "title": "Alt Text",
+            "type": "string"
+          },
+          "artist": {
+            "examples": [
+              "NASA"
+            ],
+            "title": "Artist",
+            "type": "string"
+          },
+          "height_480": {
+            "examples": [
+              320
+            ],
+            "title": "Height 480",
+            "type": "integer"
+          },
+          "license_short": {
+            "examples": [
+              "Public domain"
+            ],
+            "title": "License Short",
+            "type": "string"
+          },
+          "license_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "License Url"
+          },
+          "source_url": {
+            "description": "Wikimedia Commons file page",
+            "title": "Source Url",
+            "type": "string"
+          },
+          "url_480": {
+            "examples": [
+              "/api/v1/satellites/25544/image?w=480"
+            ],
+            "title": "Url 480",
+            "type": "string"
+          },
+          "url_960": {
+            "examples": [
+              "/api/v1/satellites/25544/image?w=960"
+            ],
+            "title": "Url 960",
+            "type": "string"
+          },
+          "width_480": {
+            "examples": [
+              480
+            ],
+            "title": "Width 480",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "url_480",
+          "url_960",
+          "width_480",
+          "height_480",
+          "artist",
+          "license_short",
+          "license_url",
+          "source_url",
+          "alt_text"
+        ],
+        "title": "AboutImageOut",
+        "type": "object"
+      },
+      "AboutOut": {
+        "description": "What Wikimedia says about an object, with the attribution its licenses require.",
+        "properties": {
+          "categories": {
+            "examples": [
+              [
+                "space_station",
+                "crewed"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "fetched_at": {
+            "format": "date-time",
+            "title": "Fetched At",
+            "type": "string"
+          },
+          "image": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AboutImageOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "manufacturers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Manufacturers",
+            "type": "array"
+          },
+          "norad_id": {
+            "examples": [
+              25544
+            ],
+            "title": "Norad Id",
+            "type": "integer"
+          },
+          "operators": {
+            "examples": [
+              [
+                "NASA",
+                "Roscosmos"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "title": "Operators",
+            "type": "array"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/AboutScope",
+            "description": "object: the text describes this object; constellation: its constellation"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "summary_license": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "CC BY-SA 4.0"
+            ],
+            "title": "Summary License"
+          },
+          "summary_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SummarySource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "summary_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary Url"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "International Space Station"
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "norad_id",
+          "scope",
+          "title",
+          "summary",
+          "summary_source",
+          "summary_url",
+          "summary_license",
+          "categories",
+          "operators",
+          "manufacturers",
+          "image",
+          "fetched_at"
+        ],
+        "title": "AboutOut",
+        "type": "object"
+      },
+      "AboutScope": {
+        "enum": [
+          "object",
+          "constellation"
+        ],
+        "title": "AboutScope",
+        "type": "string"
+      },
       "DataState": {
         "enum": [
           "ok",
@@ -260,6 +489,14 @@
         "title": "HealthOut",
         "type": "object"
       },
+      "ImageWidth": {
+        "enum": [
+          480,
+          960
+        ],
+        "title": "ImageWidth",
+        "type": "integer"
+      },
       "OrbitClass": {
         "enum": [
           "LEO",
@@ -273,6 +510,16 @@
       },
       "SatelliteDetailOut": {
         "properties": {
+          "has_about": {
+            "description": "A description is available at .../about",
+            "title": "Has About",
+            "type": "boolean"
+          },
+          "has_image": {
+            "description": "An image is available at .../image",
+            "title": "Has Image",
+            "type": "boolean"
+          },
           "latest_elements": {
             "anyOf": [
               {
@@ -289,7 +536,9 @@
         },
         "required": [
           "satellite",
-          "latest_elements"
+          "latest_elements",
+          "has_about",
+          "has_image"
         ],
         "title": "SatelliteDetailOut",
         "type": "object"
@@ -422,6 +671,14 @@
         ],
         "title": "SatellitePageOut",
         "type": "object"
+      },
+      "SummarySource": {
+        "enum": [
+          "wikipedia",
+          "wikidata"
+        ],
+        "title": "SummarySource",
+        "type": "string"
       },
       "ValidationError": {
         "properties": {
@@ -803,6 +1060,128 @@
           }
         },
         "summary": "Satellite metadata and latest element set",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/api/v1/satellites/{norad_id}/about": {
+      "get": {
+        "description": "Content from Wikidata (CC0), English Wikipedia (CC BY-SA 4.0) and Wikimedia Commons (per-file licenses). Show the attribution fields with the content.",
+        "operationId": "get_about_api_v1_satellites__norad_id__about_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "norad_id",
+            "required": true,
+            "schema": {
+              "maximum": 999999999,
+              "minimum": 1,
+              "title": "Norad Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AboutOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "No description for this object"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Description, purpose and image credit from Wikimedia",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/api/v1/satellites/{norad_id}/image": {
+      "get": {
+        "description": "Served from this API; supports ETag / If-None-Match.",
+        "operationId": "get_image_api_v1_satellites__norad_id__image_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "norad_id",
+            "required": true,
+            "schema": {
+              "maximum": 999999999,
+              "minimum": 1,
+              "title": "Norad Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Width in pixels: 480 or 960",
+            "in": "query",
+            "name": "w",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ImageWidth",
+              "description": "Width in pixels: 480 or 960"
+            }
+          },
+          {
+            "in": "header",
+            "name": "if-none-match",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-None-Match"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/jpeg": {},
+              "image/png": {}
+            },
+            "description": "Successful Response"
+          },
+          "304": {
+            "description": "Not modified"
+          },
+          "404": {
+            "description": "No image for this object"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "The object's image (JPEG or PNG), 480 or 960 px wide",
         "tags": [
           "catalog"
         ]

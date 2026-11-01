@@ -1,0 +1,16 @@
+{
+  "head": {"vars": ["item", "id", "sitelinks", "enwiki", "description", "p18", "classes", "operators", "manufacturers", "parts"]},
+  "results": {"bindings": [
+    {
+      "item": {"type": "uri", "value": "http://www.wikidata.org/entity/Q900003"},
+      "id": {"type": "literal", "value": "2026-101A"},
+      "sitelinks": {"type": "literal", "value": "0"},
+      "description": {"type": "literal", "value": "satellite"},
+      "p18": {"type": "uri", "value": "http://commons.wikimedia.org/wiki/Special:FilePath/Testsat%20nav.png"},
+      "classes": {"type": "literal", "value": "Q1285444"},
+      "operators": {"type": "literal", "value": "Testnet Operations"},
+      "manufacturers": {"type": "literal", "value": "Builder Co"},
+      "parts": {"type": "literal", "value": "Q900004 https://en.wikipedia.org/wiki/Testnet"}
+    }
+  ]}
+}

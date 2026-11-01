@@ -21,6 +21,7 @@ import { useGroups } from './hooks/useGroups';
 import { useGroupSatellites } from './hooks/useGroupSatellites';
 import { useLayoutMode, type LayoutMode } from './hooks/useMediaQuery';
 import { useNow } from './hooks/useNow';
+import { useSatelliteAbout } from './hooks/useSatelliteAbout';
 import { useSatelliteSearch } from './hooks/useSatelliteSearch';
 import { useSelectedSatellite } from './hooks/useSelectedSatellite';
 import { useSkin } from './hooks/useSkin';
@@ -58,6 +59,7 @@ export function App() {
   const satellites = useGroupSatellites(api, group);
   const results = useSatelliteSearch(api, search);
   const selected = useSelectedSatellite(api, selectedId, now);
+  const about = useSatelliteAbout(api, selected.detail);
 
   const skin = useSkin();
   const mode = useLayoutMode();
@@ -154,6 +156,7 @@ export function App() {
         selectedId={selectedId}
         detail={selected.detail}
         state={selected.state}
+        about={about}
         now={now}
         error={selected.error}
         onClose={() => {
