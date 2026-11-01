@@ -19,6 +19,19 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Descriptions and images for well-known objects: the Selected tile shows a credited photo
+  (with a full-size viewer), up to two purpose chips, a short description from Wikipedia (or
+  Wikidata) with its source and license, and operators and manufacturers. Constellation members
+  without their own article show the constellation's text under "About the … constellation".
+  Objects without data look exactly as before. See ADR 0006.
+- Enrich job (`sattrack.enrich`, `make run-enrich`) in the worker process that fetches this content
+  from Wikidata, Wikipedia and Wikimedia Commons once a day for new and due objects, following
+  Wikimedia's etiquette (identifying User-Agent, one request at a time, `Retry-After`, full stop on
+  errors). New settings `SATTRACK_ENRICH_ENABLED`, `SATTRACK_ENRICH_CONTACT` and
+  `SATTRACK_ENRICH_INTERVAL_HOURS`.
+- REST API: `/api/v1/satellites/{id}/about`, `/api/v1/satellites/{id}/image?w=480|960` (with ETags),
+  and `has_about` / `has_image` on `/satellites/{id}`.
+- Database schema migration `0002` (`satellite_about`, `satellite_image`).
 - Rolling digits: when a count changes (group sizes, the number of groups, search matches, the
   object count on the globe), the UTC clock ticks, or the selected satellite's displayed altitude
   or speed changes, the changed digits roll like an odometer, ones first, up for increases and

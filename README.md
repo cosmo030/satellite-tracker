@@ -20,6 +20,9 @@ and draws it on a CesiumJS globe, with search, filters, orbit paths and ground t
   (LEO/MEO/GEO/HEO), country and launch year
 - Details for the selected satellite: altitude, speed, position, inclination, period, launch date
   and element age
+- For well-known objects, a short description, purpose, operator, manufacturer and a freely
+  licensed photo from Wikimedia, each credited; fetched and served by our backend, so the browser
+  never contacts Wikimedia
 - Orbit path and ground track for the selected satellite, each switchable
 - Warning when orbital elements are more than 3 days old
 - Layouts for wide, medium (under 1100 px) and phone-sized screens (under 760 px)
@@ -74,6 +77,9 @@ On Windows, use WSL 2 for `make`.
    make seed          # or: synthetic demo satellites
    ```
 
+   Optionally, set `SATTRACK_ENRICH_CONTACT` in `.env` (your email address or an `https://` URL)
+   and run `make run-enrich` to add descriptions and images from Wikimedia.
+
 4. Start the API and the frontend in two terminals:
 
    ```bash
@@ -97,6 +103,7 @@ Run `make help` for the full list. The most used:
 | `make format` | Format backend and frontend code |
 | `make test` | Backend and frontend tests; integration tests need `SATTRACK_TEST_DATABASE_URL` |
 | `make openapi` | Regenerate `docs/openapi.json` after API changes |
+| `make run-enrich` | Fetch descriptions and images from Wikimedia once (needs `SATTRACK_ENRICH_CONTACT`) |
 
 ## Configuration
 
@@ -107,7 +114,8 @@ and listed with examples in [.env.example](.env.example).
 
 ```text
 backend/            FastAPI app, ingest worker, Alembic migrations, tests
-  src/sattrack/     catalog/ (satellites, element sets, API), ingest/ (CelesTrak), health/
+  src/sattrack/     catalog/ (satellites, element sets, API), ingest/ (CelesTrak),
+                    enrich/ (Wikimedia descriptions and images), health/
 frontend/           React + TypeScript app with CesiumJS and satellite.js
 docs/               Architecture, ADRs, API spec, configuration, runbook
 scripts/            Database init script for docker compose
@@ -130,3 +138,10 @@ Orbital data comes from [CelesTrak](https://celestrak.org), run by Dr. T.S. Kels
 non-profit. Please respect its usage policy; consider [supporting it](https://celestrak.org).
 The globe uses [CesiumJS](https://cesium.com/platform/cesiumjs/) (Apache-2.0) with its bundled
 Natural Earth II imagery, and orbits are computed with [satellite.js](https://github.com/shashwatak/satellite-js) (MIT).
+
+Descriptions, purposes, operators and images come from the Wikimedia projects:
+[Wikidata](https://www.wikidata.org) (CC0), [English Wikipedia](https://en.wikipedia.org)
+(text under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)) and
+[Wikimedia Commons](https://commons.wikimedia.org) (each image under its own free license). The
+app credits every description with its source and license, and every image with its author,
+license and file page. None of this content is stored in this repository.

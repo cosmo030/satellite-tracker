@@ -13,6 +13,9 @@ Makefile and `docker compose` load them from `.env` (copy [.env.example](../.env
 | `SATTRACK_INGEST_GROUPS` | Comma-separated CelesTrak group slugs to ingest | No | `stations,visual,gps-ops,galileo,weather,science` | `stations,starlink` | No |
 | `SATTRACK_HTTP_TIMEOUT_SECONDS` | Timeout per CelesTrak request, seconds (0–300) | No | `30` | `10` | No |
 | `SATTRACK_CELESTRAK_BASE_URL` | CelesTrak base URL; must use `https://` | No | `https://celestrak.org` | `https://celestrak.org` | No |
+| `SATTRACK_ENRICH_ENABLED` | Run the enrich job (descriptions and images from Wikimedia); `false` makes no Wikimedia requests at all | No | `true` | `false` | No |
+| `SATTRACK_ENRICH_CONTACT` | Operator contact sent in the User-Agent of every Wikimedia request: an email address or an `https://` URL. The enrich job refuses to start without it; the API and ingest run without it | When enrich is enabled | — | `<YOUR_EMAIL_OR_URL>` | No (but it is sent to Wikimedia) |
+| `SATTRACK_ENRICH_INTERVAL_HOURS` | Hours after which an object's description and image are fetched again (24–2160) | No | `168` | `336` | No |
 | `SATTRACK_CORS_ALLOWED_ORIGINS` | Comma-separated origins allowed to call the API from a browser | No | none (same origin only) | `https://tracker.example.com` | No |
 | `SATTRACK_TEST_DATABASE_URL` | Disposable database for integration tests; tables are emptied | Tests only | — (tests skipped) | `postgresql+psycopg://sattrack:<password>@localhost:5432/sattrack_test` | Yes |
 

@@ -44,6 +44,38 @@ docker compose exec db psql -U sattrack -d sattrack -c \
   "SELECT started_at, source, group_slug, status_code, succeeded FROM fetch_log ORDER BY id DESC LIMIT 20;"
 ```
 
+## Scheduled Job: Enrich (Wikimedia)
+
+The `ingest` container also runs the enrich job, which fetches descriptions and images from
+Wikidata, Wikipedia and Wikimedia Commons. Once a day it processes objects that are new, have no
+result yet, or were fetched more than `SATTRACK_ENRICH_INTERVAL_HOURS` ago (default 7 days).
+Each run logs one line: `Enrich run finished matched=… descriptions=… images=… no_match=…
+failed=… duration=…`. Ingest and enrich never write at the same time (they share a database
+lock), so either may wait a few minutes for the other.
+
+It needs `SATTRACK_ENRICH_CONTACT` (an email address or `https://` URL sent to Wikimedia in the
+User-Agent). Without it the worker logs `Enrich job not started: SATTRACK_ENRICH_CONTACT is
+required …` and keeps ingesting.
+`SATTRACK_ENRICH_ENABLED=false` turns it off completely. Run it by hand with `make run-enrich`
+(new and due objects), or for every object:
+
+```bash
+docker compose exec ingest python -m sattrack.enrich --once --full
+```
+
+| Symptom | First response |
+|---|---|
+| "Enrich run stopped: Wikimedia request failed (HTTP 5xx)" | A temporary Wikimedia outage (the Wikidata query service returns 502 now and then). Nothing is lost: finished chunks are saved and the rest is picked up by the next daily run. Do not loop manual runs. |
+| HTTP 429 that persists after retries, or 403 | Wikimedia is rate-limiting or refusing the host. Set `SATTRACK_ENRICH_ENABLED=false`, check that `SATTRACK_ENRICH_CONTACT` is a reachable contact, and see the Wikimedia User-Agent and API etiquette policies. |
+| An image or text must be removed (for example a takedown) | Delete the row and keep it out until the next refresh by setting the object to `no_match`: `DELETE FROM satellite_image WHERE norad_id = N; UPDATE satellite_about SET status = 'no_match', fetched_at = now() WHERE norad_id = N;` |
+
+Results so far:
+
+```bash
+docker compose exec db psql -U sattrack -d sattrack -c \
+  "SELECT status, count(*) FROM satellite_about GROUP BY 1;"
+```
+
 ## Restart
 
 `docker compose restart api` or `docker compose restart ingest` is safe at any time; the
@@ -51,8 +83,9 @@ worker skips groups that were fetched less than 2 hours ago.
 
 ## Backup and Restore
 
-All data can be downloaded again from CelesTrak except the element-set history. Back up
-if you need the history:
+All data can be downloaded again except the element-set history: CelesTrak data by the ingest
+worker, descriptions and images by `make run-enrich` (a full pass takes a few minutes; images
+add about 260 KB per object to the database and the backup). Back up if you need the history:
 
 ```bash
 docker compose exec db pg_dump -U sattrack -Fc sattrack > sattrack-$(date +%F).dump
@@ -64,4 +97,5 @@ docker compose exec -T db pg_restore -U sattrack -d sattrack --clean < sattrack-
 1. `git checkout <previous tag>` and `docker compose up -d --build`.
 2. If the release you are leaving added a migration, downgrade first with the new code still
    checked out: `docker compose run --rm migrate alembic downgrade -1`. Migration
-   `0001` is the initial schema; downgrading it deletes all data.
+   `0001` is the initial schema; downgrading it deletes all data. Downgrading `0002` drops the
+   descriptions and images, which the enrich job can fetch again.
