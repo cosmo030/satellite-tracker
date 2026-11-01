@@ -7,7 +7,12 @@ and draws it on a CesiumJS globe, with search, filters, orbit paths and ground t
 
 **Owner:** [@cosmo030](https://github.com/cosmo030) · **Status:** MVP, in development · **License:** [MIT](LICENSE)
 
-![Satellite Tracker showing a selected satellite with its orbit path and ground track](docs/screenshot.jpg)
+![Satellite Tracker: the tiled workspace around the globe with the Starlink group, and the ACS3 solar sail selected with its orbit path, live altitude and speed, photo and description](docs/screenshot.webp)
+
+<sub>Screenshot includes an image of ACS3 by NASA Ames Research Center / NASA / Aero Animation /
+Ben Schweighart (public domain, via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Advanced_Composite_Solar_Sail_System_Artist%E2%80%99s_Concept_4_(ACS3_SolarSailTurntable_right)_(cropped).png))
+and text from the Wikipedia article [Solar sail](https://en.wikipedia.org/wiki/Solar_sail)
+([CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)).</sub>
 
 ## Features
 
