@@ -11,6 +11,7 @@ import { formatCount } from '../orbit/format';
 import { OWNER_OPTIONS, ownerCodeFor, ownerName } from '../ui/catalog';
 import { shortcutModifierLabel } from '../ui/keyboard';
 import { SearchIcon } from './icons';
+import { RollingNumber } from './RollingNumber';
 import { Tile } from './Tile';
 
 type FilterKind = 'orbit' | 'country' | 'year';
@@ -64,7 +65,7 @@ export function SearchTile({
       id="search"
       title="Search"
       className="search-tile"
-      meta={page ? matchesLabel(page.total) : undefined}
+      meta={page ? <MatchCount total={page.total} /> : undefined}
     >
       <label className="field">
         <SearchIcon />
@@ -119,8 +120,13 @@ export function SearchTile({
   );
 }
 
-function matchesLabel(total: number): string {
-  return `${formatCount(total)} ${total === 1 ? 'match' : 'matches'}`;
+/** The only count announced to screen readers when it changes (spec 6.1). */
+function MatchCount({ total }: { total: number }) {
+  return (
+    <span aria-live="polite">
+      <RollingNumber value={total} /> {total === 1 ? 'match' : 'matches'}
+    </span>
+  );
 }
 
 function activeFilterLabel(kind: FilterKind, search: SatelliteSearch): string | null {

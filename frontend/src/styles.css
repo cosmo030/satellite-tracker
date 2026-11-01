@@ -201,6 +201,48 @@ a {
   background: currentcolor;
 }
 
+/* ---- Rolling digits (spec 6.1) ---- */
+
+.rolling-number {
+  white-space: nowrap;
+}
+
+/*
+ * A slot is one digit wide (tabular figures) and one line tall. clip-path, unlike overflow,
+ * clips the strip without moving the slot's baseline off the text around it.
+ */
+.digit-slot {
+  position: relative;
+  display: inline-block;
+  clip-path: inset(0);
+}
+
+.digit-sizer {
+  visibility: hidden;
+}
+
+.digit-sizer.exiting {
+  visibility: visible;
+}
+
+.digit-roll {
+  position: absolute;
+  inset: 0;
+}
+
+.digit-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.digit-strip > span {
+  display: block;
+}
+
 /* ---- Globe stage (under the workspace) ---- */
 
 .globe-stage {

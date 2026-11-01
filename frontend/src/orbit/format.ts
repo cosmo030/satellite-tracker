@@ -58,9 +58,12 @@ export function formatPeriod(minutes: number): string {
   return `${(minutes / 60).toFixed(2)} h`;
 }
 
-/** Whole numbers with thousands separators: "11,156". */
-export function formatCount(value: number): string {
-  return value.toLocaleString('en-US');
+/**
+ * Whole numbers with the user's thousands separators ("11,156" in English, "11.156" in German).
+ * Digits stay Latin so rolling digits (0–9 strips) always match what is shown.
+ */
+export function formatCount(value: number, locale?: string): string {
+  return value.toLocaleString(locale, { numberingSystem: 'latn', maximumFractionDigits: 0 });
 }
 
 /** A calendar date from the catalog ("2017-07-14") as "14 Jul 2017"; null if unreadable. */
